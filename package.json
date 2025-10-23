@@ -1,0 +1,33 @@
+{
+    "name": "nodes-http-loader",
+    "version": "1.0.0",
+    "description": "A zero-dependency package to download, decrypt, and run programs from URLs using XOR encryption. The package also contains a prepare command to encrypt local binaries for secure distribution. This allows you to ensure your program is compatible with the loader. Example use cases include the ability to update your software version and upload it to an immutable URL, so that your personal computers or servers can download & run the latest version! Usage: nodes-http-loader <url> <key> [args...]",
+    "bin": {
+      "nodes-http-loader": "./bin/nodes-http-loader.js"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/LNodesL/nodes-http-loader.git"
+    },
+    "keywords": [
+      "http",
+      "loader",
+      "download",
+      "encryption",
+      "xor",
+      "cli",
+      "executable",
+      "zero-dependency",
+      "native"
+    ],
+    "engines": {
+      "node": ">=14.0.0"
+    },
+    "files": [
+      "bin/",
+      "README.md",
+      "LICENSE"
+    ],
+    "author": "LNodesL",
+    "license": "MIT"
+  }
