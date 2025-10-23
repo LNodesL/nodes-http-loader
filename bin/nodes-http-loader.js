@@ -9,7 +9,6 @@ const os = require('os');
 
 // Debug logging function
 let debugMode = false;
-let jsMode = false;
 function debugLog(...args) {
     if (debugMode) {
         console.log(...args);
@@ -67,7 +66,7 @@ async function downloadFile(url) {
                 path: urlObj.pathname + urlObj.search,
                 method: 'GET',
                 headers: {
-                    'User-Agent': 'nodes-http-loader/1.0.0'
+                    'User-Agent': 'nodes-http-loader/1.0.1'
                 },
                 timeout: 360000 // 360 second timeout
             };
@@ -158,26 +157,17 @@ async function main() {
         debugMode = true;
     }
     
-    // Check for js flag
-    const jsIndex = args.indexOf('--js');
-    const isJs = jsIndex !== -1;
-    if (isJs) {
-        args.splice(jsIndex, 1); // Remove --js from args
-        jsMode = true;
-    }
     
     if (args.length < 2) {
         console.log('Usage:');
         console.log('  nodes-http-loader <url> <key> [args...]           # Download, decrypt, and run program');
         console.log('  nodes-http-loader prepare <binary> <key> [output]  # Prepare binary for upload');
         console.log('  nodes-http-loader --debug <url> <key> [args...]   # Run with debug output');
-        console.log('  nodes-http-loader --js <url> <key> [args...]      # Evaluate JavaScript instead of executing');
         console.log('');
         console.log('Examples:');
         console.log('  nodes-http-loader https://example.com/program mysecretkey');
         console.log('  nodes-http-loader https://example.com/program mysecretkey arg1 arg2');
         console.log('  nodes-http-loader --debug https://example.com/program mysecretkey');
-        console.log('  nodes-http-loader --js https://example.com/script.js mysecretkey');
         console.log('  nodes-http-loader prepare ./myapp mysecretkey');
         console.log('  nodes-http-loader prepare ./myapp mysecretkey encrypted-app.bin');
         process.exit(1);
@@ -256,71 +246,48 @@ async function main() {
     });
     
     try {
+        // Create a temporary file with a unique name
+        const tempDir = os.tmpdir();
+        const tempFile = path.join(tempDir, `nodes-http-loader-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`);
         
-        if (jsMode) {
-            debugLog('Evaluating JavaScript content...');
-            
-            // Convert decrypted data to string
-            const jsCode = decryptedData.toString('utf8');
-            
+        // Cleanup function
+        function cleanup() {
             try {
-                // Evaluate the JavaScript code
-                eval(jsCode);
-            } catch (evalError) {
-                debugError('JavaScript evaluation failed', evalError.message);
-                process.exit(1);
-            }
-        } else {
-
-            debugLog('Creating temporary file...');
-
-             // Create a temporary file with a unique name
-            const tempDir = os.tmpdir();
-            const tempFile = path.join(tempDir, `nodes-http-loader-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`);
-            debugLog('Temporary file created: ' + tempFile);
-            
-            // Cleanup function
-            function cleanup() {
-                try {
-                    if (fs.existsSync(tempFile)) {
-                        fs.unlinkSync(tempFile);
-                    }
-                } catch (error) {
-                    // Silently ignore cleanup errors
+                if (fs.existsSync(tempFile)) {
+                    fs.unlinkSync(tempFile);
                 }
+            } catch (error) {
+                // Silently ignore cleanup errors
             }
-
-            debugLog('Writing decrypted data to temporary file...');
-            
-            // Write decrypted data to temporary file
-            fs.writeFileSync(tempFile, decryptedData);
-            debugLog('Decrypted data written to temporary file successfully');
-            
-            // Make the file executable (Unix-like systems)
-            if (process.platform !== 'win32') {
-                fs.chmodSync(tempFile, 0o755);
-            }
-            
-            // Execute the program with any additional arguments
-            const programArgs = args.slice(2); // Skip: url, key
-            debugLog('Program arguments: ' + programArgs.join(' '));
-            debugLog('Spawning program with arguments: ' + programArgs.join(' '));
-            const child = spawn(tempFile, programArgs, {
-                stdio: 'inherit',
-                detached: false
-            });
-            
-            child.on('error', (error) => {
-                debugError('Program execution failed', error.message);
-                cleanup();
-                process.exit(1);
-            });
-            
-            child.on('exit', (code) => {
-                cleanup();
-                process.exit(code || 0);
-            });
         }
+        
+        // Write decrypted data to temporary file
+        fs.writeFileSync(tempFile, decryptedData);
+        
+        // Make the file executable (Unix-like systems)
+        if (process.platform !== 'win32') {
+            fs.chmodSync(tempFile, 0o755);
+        }
+        
+        debugLog('Executing downloaded program...');
+        
+        // Execute the program with any additional arguments
+        const programArgs = args.slice(2); // Skip: url, key
+        const child = spawn(tempFile, programArgs, {
+            stdio: 'inherit',
+            detached: false
+        });
+        
+        child.on('error', (error) => {
+            debugError('Program execution failed', error.message);
+            cleanup();
+            process.exit(1);
+        });
+        
+        child.on('exit', (code) => {
+            cleanup();
+            process.exit(code || 0);
+        });
         
     } catch (error) {
         debugError('Execution failed', error.message);

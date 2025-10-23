@@ -1,16 +1,17 @@
 # nodes-http-loader
 
-A Node.js package to download, decrypt, and run a program from a URL using XOR encryption.
+A zero-dependency Node.js package to download, decrypt, and run programs from URLs using XOR encryption.
 
 ## Features
 
 - Download any executable program from a URL
-- Decrypt and run the program directly (no intermediate files)
+- Decrypt and run programs directly (no intermediate files)
 - **Direct execution**: Downloads, decrypts, and runs programs in one command
 - **Silent by default**: No console output unless using `--debug` flag
 - **Cross-platform**: Works on Windows, macOS, and Linux
 - **Argument passing**: Pass command-line arguments to the downloaded program
 - **Automatic cleanup**: Temporary files are automatically removed after execution
+- **Zero dependencies**: Uses only native Node.js modules
 - **Prepare workflow**: Encrypt local binaries for secure distribution to upload elsewhere, and download to your other machines using the same package.
 
 ## Installation
